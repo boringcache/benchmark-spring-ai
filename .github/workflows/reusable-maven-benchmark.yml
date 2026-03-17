@@ -81,6 +81,12 @@ jobs:
       - name: Prepare base benchmark source tree
         run: ./scripts/prepare-source.sh base
 
+      - name: Setup Java runtime
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
       - name: Prepare benchmark scope and helpers
         id: scope
         run: |
@@ -116,9 +122,8 @@ jobs:
         id: boringcache_one
         uses: boringcache/one@v1
         with:
-          setup: mise
+          setup: none
           mode: maven
-          tools: java@${{ env.JAVA_VERSION }}
           workspace: ${{ env.BENCHMARK_WORKSPACE }}
           cache-tag: ${{ steps.scope.outputs.tag_remote }}
           working-directory: ./upstream
@@ -130,17 +135,6 @@ jobs:
         env:
           BORINGCACHE_RESTORE_TOKEN: ${{ secrets.BORINGCACHE_RESTORE_TOKEN || secrets.BORINGCACHE_API_TOKEN }}
           BORINGCACHE_SAVE_TOKEN: ${{ secrets.BORINGCACHE_SAVE_TOKEN || secrets.BORINGCACHE_API_TOKEN }}
-
-      - name: Configure boringcache/one for actions-cache tooling
-        if: inputs.strategy == 'actions-cache'
-        uses: boringcache/one@v1
-        with:
-          setup: mise
-          mode: auto
-          tools: java@${{ env.JAVA_VERSION }}
-          workspace: ${{ env.BENCHMARK_WORKSPACE }}
-          working-directory: ./upstream
-          verbose: true
 
       - name: Purge benchmark GHA cache keys
         if: inputs.strategy == 'actions-cache'
@@ -295,6 +289,12 @@ jobs:
       - name: Prepare scenario source tree
         run: ./scripts/prepare-source.sh "${{ matrix.phase }}"
 
+      - name: Setup Java runtime
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
       - name: Prepare benchmark scope and helpers
         id: scope
         run: |
@@ -321,9 +321,8 @@ jobs:
         if: inputs.strategy == 'boringcache'
         uses: boringcache/one@v1
         with:
-          setup: mise
+          setup: none
           mode: maven
-          tools: java@${{ env.JAVA_VERSION }}
           workspace: ${{ env.BENCHMARK_WORKSPACE }}
           cache-tag: ${{ steps.scope.outputs.tag_remote }}
           working-directory: ./upstream
@@ -335,17 +334,6 @@ jobs:
           verbose: true
         env:
           BORINGCACHE_RESTORE_TOKEN: ${{ secrets.BORINGCACHE_RESTORE_TOKEN || secrets.BORINGCACHE_API_TOKEN }}
-
-      - name: Configure boringcache/one for actions-cache tooling
-        if: inputs.strategy == 'actions-cache'
-        uses: boringcache/one@v1
-        with:
-          setup: mise
-          mode: auto
-          tools: java@${{ env.JAVA_VERSION }}
-          workspace: ${{ env.BENCHMARK_WORKSPACE }}
-          working-directory: ./upstream
-          verbose: true
 
       - name: Restore seeded actions/cache
         if: inputs.strategy == 'actions-cache'
