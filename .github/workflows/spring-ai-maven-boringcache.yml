@@ -32,6 +32,6 @@ jobs:
       project_repo: spring-projects/spring-ai
       project_ref: e6ec123574c263094dd3bc866d67c1390f190f82
       strategy: boringcache
-      java_version: "temurin-21.0.8+9.0.LTS"
+      java_version: "21"
       build_command: ./mvnw --batch-mode -ntp clean install -DskipTests -Dmaven.javadoc.skip=true
     secrets: inherit
