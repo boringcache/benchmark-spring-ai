@@ -1,12 +1,9 @@
 diff --git a/models/spring-ai-anthropic/src/main/java/org/springframework/ai/anthropic/AnthropicChatModel.java b/models/spring-ai-anthropic/src/main/java/org/springframework/ai/anthropic/AnthropicChatModel.java
-index 291124f0b..83feec1c6 100644
 --- a/models/spring-ai-anthropic/src/main/java/org/springframework/ai/anthropic/AnthropicChatModel.java
 +++ b/models/spring-ai-anthropic/src/main/java/org/springframework/ai/anthropic/AnthropicChatModel.java
-@@ -102,6 +102,7 @@ import org.springframework.util.StringUtils;
-  * @since 1.0.0
+@@ -101,4 +101,4 @@
+  * @author Austin Dase
+- * @since 1.0.0
++ * @since 1.0.0 benchmark stale mid
   */
  public class AnthropicChatModel implements ChatModel {
-+  // benchmark stale mutation mid
- 
- 	public static final String DEFAULT_MODEL_NAME = AnthropicApi.ChatModel.CLAUDE_HAIKU_4_5.getValue();
- 
