@@ -1,0 +1,32 @@
+name: "Spring AI Maven - Actions Cache"
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".gitmodules"
+      - ".github/workflows/spring-ai-maven-boringcache.yml"
+      - ".github/workflows/spring-ai-maven-actions-cache.yml"
+      - ".github/workflows/reusable-maven-benchmark.yml"
+      - "README.md"
+      - "scenarios/**"
+      - "scripts/**"
+      - "upstream"
+  schedule:
+    - cron: "0 2 * * *"
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  benchmark:
+    uses: ./.github/workflows/reusable-maven-benchmark.yml
+    with:
+      benchmark_id: spring-ai-maven
+      project_repo: spring-projects/spring-ai
+      project_ref: e6ec123574c263094dd3bc866d67c1390f190f82
+      strategy: actions-cache
+      java_version: "temurin-21.0.8+9.0.LTS"
+      build_command: ./mvnw --batch-mode -ntp clean install -DskipTests -Dmaven.javadoc.skip=true
+    secrets: inherit

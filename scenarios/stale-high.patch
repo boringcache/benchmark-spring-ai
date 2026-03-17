@@ -1,0 +1,12 @@
+diff --git a/spring-ai-commons/src/main/java/org/springframework/ai/content/Content.java b/spring-ai-commons/src/main/java/org/springframework/ai/content/Content.java
+index 8a80a6957..9ef727509 100644
+--- a/spring-ai-commons/src/main/java/org/springframework/ai/content/Content.java
++++ b/spring-ai-commons/src/main/java/org/springframework/ai/content/Content.java
+@@ -30,6 +30,7 @@ import org.jspecify.annotations.Nullable;
+  * @since 1.0.0
+  */
+ public interface Content {
++  // benchmark stale mutation high
+ 
+ 	/**
+ 	 * Get the content of the message.

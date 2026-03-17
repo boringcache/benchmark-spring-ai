@@ -1,0 +1,12 @@
+diff --git a/advisors/spring-ai-advisors-vector-store/src/main/java/org/springframework/ai/chat/client/advisor/vectorstore/QuestionAnswerAdvisor.java b/advisors/spring-ai-advisors-vector-store/src/main/java/org/springframework/ai/chat/client/advisor/vectorstore/QuestionAnswerAdvisor.java
+index e70a3af7d..d4a2f8073 100644
+--- a/advisors/spring-ai-advisors-vector-store/src/main/java/org/springframework/ai/chat/client/advisor/vectorstore/QuestionAnswerAdvisor.java
++++ b/advisors/spring-ai-advisors-vector-store/src/main/java/org/springframework/ai/chat/client/advisor/vectorstore/QuestionAnswerAdvisor.java
+@@ -53,6 +53,7 @@ import org.springframework.util.StringUtils;
+  * @since 1.0.0
+  */
+ public class QuestionAnswerAdvisor implements BaseAdvisor {
++  // benchmark stale mutation low
+ 
+ 	public static final String RETRIEVED_DOCUMENTS = "qa_retrieved_documents";
+ 
