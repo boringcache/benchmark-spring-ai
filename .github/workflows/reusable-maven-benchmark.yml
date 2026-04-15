@@ -9,9 +9,6 @@ on:
       project_repo:
         required: true
         type: string
-      project_ref:
-        required: true
-        type: string
       strategy:
         required: true
         type: string
@@ -35,7 +32,6 @@ on:
 
 env:
   PROJECT_REPO: ${{ inputs.project_repo }}
-  PROJECT_REF: ${{ inputs.project_ref }}
   BENCHMARK_ID: ${{ inputs.benchmark_id }}
   BENCHMARK_WORKSPACE: ${{ inputs.benchmark_workspace }}
   JAVA_VERSION: ${{ inputs.java_version }}
@@ -264,7 +260,7 @@ jobs:
       fail-fast: false
       max-parallel: 1
       matrix:
-        phase: [warm1, warm2, stale-low, stale-mid, stale-high]
+        phase: [warm1]
     steps:
       - name: Validate BoringCache restore secret
         if: inputs.strategy == 'boringcache'
@@ -425,10 +421,6 @@ jobs:
             echo "${key}_seconds=${seconds}" >> "$GITHUB_OUTPUT"
           }
           parse_phase warm1
-          parse_phase warm2
-          parse_phase stale-low
-          parse_phase stale-mid
-          parse_phase stale-high
 
       - name: Measure BoringCache storage usage
         if: inputs.strategy == 'boringcache'
@@ -449,6 +441,10 @@ jobs:
           bytes="$(./scripts/sum-gha-cache-by-key.sh "${{ needs.seed-cache.outputs.seed_cache_key }}" "${{ needs.seed-cache.outputs.scope_started_at }}")"
           echo "bytes=${bytes}" >> "$GITHUB_OUTPUT"
 
+      - name: Capture committed upstream ref
+        id: upstream_ref
+        run: echo "sha=$(git rev-parse HEAD:upstream)" >> "$GITHUB_OUTPUT"
+
       - name: Write benchmark artifacts
         id: artifact_files
         run: |
@@ -456,16 +452,12 @@ jobs:
             --benchmark "$BENCHMARK_ID" \
             --strategy "${{ inputs.strategy }}" \
             --project-repo "$PROJECT_REPO" \
-            --project-ref "$PROJECT_REF" \
+            --project-ref "${{ steps.upstream_ref.outputs.sha }}" \
             --cold-seconds "${{ needs.seed-cache.outputs.cold_seconds }}" \
             --warm1-seconds "${{ steps.timings.outputs.warm1_seconds }}" \
-            --warm2-seconds "${{ steps.timings.outputs.warm2_seconds }}" \
-            --stale-low-seconds "${{ steps.timings.outputs.stale_low_seconds }}" \
-            --stale-mid-seconds "${{ steps.timings.outputs.stale_mid_seconds }}" \
-            --stale-high-seconds "${{ steps.timings.outputs.stale_high_seconds }}" \
             --cache-storage-bytes "${{ inputs.strategy == 'boringcache' && steps.bc_cache_size.outputs.bytes || steps.ac_cache_size.outputs.bytes }}" \
             --cache-storage-source "${{ inputs.strategy == 'boringcache' && 'boringcache-check' || 'github-actions-cache-api' }}" \
-            --hit-behavior-note "${{ inputs.strategy == 'boringcache' && 'Cold+seed run uses boringcache/one in mode=maven with setup=mise for tools and a run-scoped Maven cache tag, while archiving only ~/.m2/repository. Warm1/Warm2 and stale run on fresh runners, restore that same dependency repository through boringcache/one, and hit the native Maven build-cache protocol against the same run-scoped remote cache in read-only mode. Stale-low mutates a leaf/advisor-style Java source file. Stale-mid mutates a model or MCP implementation file. Stale-high mutates a shared core/chat/vector-store file. All stale phases rebuild with the same Maven command as warm runs.' || 'Cold+seed run builds from scratch and saves ~/.m2/repository plus ~/.m2/build-cache to actions/cache under a run-scoped key. Warm1/Warm2 and stale restore the same dependency repository and local Maven build-cache on fresh runners. Stale-low mutates a leaf/advisor-style Java source file. Stale-mid mutates a model or MCP implementation file. Stale-high mutates a shared core/chat/vector-store file. All stale phases rebuild with the same Maven command as warm runs.' }}"
+            --hit-behavior-note "${{ inputs.strategy == 'boringcache' && 'Cold+seed run uses boringcache/one in mode=maven with setup=mise for tools and a run-scoped Maven cache tag, while archiving only ~/.m2/repository. Warm1 restores that dependency repository on a fresh runner and rebuilds the same pinned source tree against the seeded remote cache in read-only mode.' || 'Cold+seed run builds from scratch and saves ~/.m2/repository plus ~/.m2/build-cache to actions/cache under a run-scoped key. Warm1 restores that dependency repository and local Maven build cache on a fresh runner and rebuilds the same pinned source tree without synthetic mutations.' }}"
 
       - name: Upload benchmark artifacts
         uses: actions/upload-artifact@v6

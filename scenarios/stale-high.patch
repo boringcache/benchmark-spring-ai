@@ -1,9 +1,0 @@
-diff --git a/spring-ai-commons/src/main/java/org/springframework/ai/content/Content.java b/spring-ai-commons/src/main/java/org/springframework/ai/content/Content.java
---- a/spring-ai-commons/src/main/java/org/springframework/ai/content/Content.java
-+++ b/spring-ai-commons/src/main/java/org/springframework/ai/content/Content.java
-@@ -29,4 +29,4 @@
-  * @author Christian Tzolov
-- * @since 1.0.0
-+ * @since 1.0.0 benchmark stale high
-  */
- public interface Content {

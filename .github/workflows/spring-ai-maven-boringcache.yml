@@ -7,6 +7,12 @@ on:
         description: "Optional boringcache/cli ref to build and use instead of the released CLI"
         required: false
         type: string
+  push:
+    branches:
+      - main
+    paths:
+      - ".gitmodules"
+      - "upstream"
   pull_request:
     paths:
       - ".gitmodules"
@@ -30,7 +36,6 @@ jobs:
     with:
       benchmark_id: spring-ai-maven
       project_repo: spring-projects/spring-ai
-      project_ref: e6ec123574c263094dd3bc866d67c1390f190f82
       strategy: boringcache
       java_version: "21"
       build_command: ./mvnw --batch-mode -ntp clean install -DskipTests -Dmaven.javadoc.skip=true

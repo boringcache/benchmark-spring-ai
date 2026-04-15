@@ -1,9 +1,0 @@
-diff --git a/models/spring-ai-anthropic/src/main/java/org/springframework/ai/anthropic/AnthropicChatModel.java b/models/spring-ai-anthropic/src/main/java/org/springframework/ai/anthropic/AnthropicChatModel.java
---- a/models/spring-ai-anthropic/src/main/java/org/springframework/ai/anthropic/AnthropicChatModel.java
-+++ b/models/spring-ai-anthropic/src/main/java/org/springframework/ai/anthropic/AnthropicChatModel.java
-@@ -101,4 +101,4 @@
-  * @author Austin Dase
-- * @since 1.0.0
-+ * @since 1.0.0 benchmark stale mid
-  */
- public class AnthropicChatModel implements ChatModel {

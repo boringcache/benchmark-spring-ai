@@ -1,9 +1,0 @@
-diff --git a/advisors/spring-ai-advisors-vector-store/src/main/java/org/springframework/ai/chat/client/advisor/vectorstore/QuestionAnswerAdvisor.java b/advisors/spring-ai-advisors-vector-store/src/main/java/org/springframework/ai/chat/client/advisor/vectorstore/QuestionAnswerAdvisor.java
---- a/advisors/spring-ai-advisors-vector-store/src/main/java/org/springframework/ai/chat/client/advisor/vectorstore/QuestionAnswerAdvisor.java
-+++ b/advisors/spring-ai-advisors-vector-store/src/main/java/org/springframework/ai/chat/client/advisor/vectorstore/QuestionAnswerAdvisor.java
-@@ -52,4 +52,4 @@
-  * @author Yanming Zhou
-- * @since 1.0.0
-+ * @since 1.0.0 benchmark stale low
-  */
- public class QuestionAnswerAdvisor implements BaseAdvisor {
