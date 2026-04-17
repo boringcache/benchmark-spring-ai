@@ -132,6 +132,10 @@ jobs:
           SH
           chmod +x ./run-maven-phase.sh
 
+      - name: Start seed timing
+        id: seed_timing_start
+        run: echo "started_at=$(date +%s)" >> "$GITHUB_OUTPUT"
+
       - name: Configure boringcache/one
         if: inputs.strategy == 'boringcache'
         id: boringcache_one
@@ -220,11 +224,13 @@ jobs:
           fi
           mkdir -p "$HOME/.m2/repository"
 
+          phase_start="${{ steps.seed_timing_start.outputs.started_at }}"
           start="$(date +%s)"
           ./run-maven-phase.sh seed
           rm -rf "$HOME/.m2/repository/org/springframework/ai"
           end="$(date +%s)"
-          echo "seconds=$((end - start))" >> "$GITHUB_OUTPUT"
+          echo "seconds=$((end - phase_start))" >> "$GITHUB_OUTPUT"
+          echo "build_seconds=$((end - start))" >> "$GITHUB_OUTPUT"
 
       - name: Save seeded cache (primary key)
         if: inputs.strategy == 'actions-cache'
@@ -354,6 +360,10 @@ jobs:
           SH
           chmod +x ./run-maven-phase.sh
 
+      - name: Start scenario timing
+        id: scenario_timing_start
+        run: echo "started_at=$(date +%s)" >> "$GITHUB_OUTPUT"
+
       - name: Configure boringcache/one
         if: inputs.strategy == 'boringcache'
         uses: boringcache/one@v1
@@ -389,10 +399,12 @@ jobs:
         run: |
           set -euo pipefail
 
+          phase_start="${{ steps.scenario_timing_start.outputs.started_at }}"
           start="$(date +%s)"
           ./run-maven-phase.sh ${{ contains(matrix.phase, 'stale') && 'stale' || 'warm' }}
           end="$(date +%s)"
-          echo "seconds=$((end - start))" >> "$GITHUB_OUTPUT"
+          echo "seconds=$((end - phase_start))" >> "$GITHUB_OUTPUT"
+          echo "build_seconds=$((end - start))" >> "$GITHUB_OUTPUT"
 
       - name: Persist scenario timing artifact
         run: |
@@ -401,6 +413,7 @@ jobs:
           cat > "benchmark-phase/${{ matrix.phase }}.env" <<EOF
           phase=${{ matrix.phase }}
           seconds=${{ steps.phase_build.outputs.seconds }}
+          build_seconds=${{ steps.phase_build.outputs.build_seconds }}
           EOF
 
       - name: Upload scenario timing artifact
