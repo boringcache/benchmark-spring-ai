@@ -48,7 +48,7 @@ jobs:
     outputs:
       cold_seconds: ${{ steps.cold_baseline_build.outputs.seconds }}
       scope_started_at: ${{ steps.scope.outputs.scope_started_at }}
-      tags_csv: ${{ steps.boringcache_one.outputs.resolved-tags || steps.scope.outputs.tags_csv }}
+      tags_csv: ${{ steps.boringcache_one.outputs.resolved-tags }}
       seed_cache_key: ${{ steps.seed_cache_key.outputs.key }}
       cache_key_prefix: ${{ steps.scope.outputs.cache_key_prefix }}
     steps:
@@ -105,13 +105,9 @@ jobs:
             cache_key_fallback="ac-${cache_scope}-seed2"
           fi
           tag_remote="${cache_scope}-maven-remote"
-          tag_repo="${tag_remote}-maven-deps"
-          tags_csv="${tag_remote},${tag_repo}"
 
           echo "scope_started_at=${scope_started_at}" >> "$GITHUB_OUTPUT"
           echo "tag_remote=${tag_remote}" >> "$GITHUB_OUTPUT"
-          echo "tag_repo=${tag_repo}" >> "$GITHUB_OUTPUT"
-          echo "tags_csv=${tags_csv}" >> "$GITHUB_OUTPUT"
           echo "cache_key_prefix=${cache_key_prefix}" >> "$GITHUB_OUTPUT"
           echo "cache_key_primary=${cache_key_primary}" >> "$GITHUB_OUTPUT"
           echo "cache_key_fallback=${cache_key_fallback}" >> "$GITHUB_OUTPUT"
@@ -141,8 +137,7 @@ jobs:
           cache-tag: ${{ steps.scope.outputs.tag_remote }}
           working-directory: ./upstream
           maven-local-repo: ~/.m2/repository
-          entries: |
-            ${{ steps.scope.outputs.tag_repo }}:~/.m2/repository
+          cache-profiles: benchmark
           verify: wait
           verbose: true
         env:
@@ -334,10 +329,8 @@ jobs:
             cache_scope="${BENCHMARK_ID}-run-r${GITHUB_RUN_ID}-a${GITHUB_RUN_ATTEMPT}"
           fi
           tag_remote="${cache_scope}-maven-remote"
-          tag_repo="${tag_remote}-maven-deps"
 
           echo "tag_remote=${tag_remote}" >> "$GITHUB_OUTPUT"
-          echo "tag_repo=${tag_repo}" >> "$GITHUB_OUTPUT"
 
           cat > ./run-maven-phase.sh <<'SH'
           #!/usr/bin/env bash
@@ -364,12 +357,25 @@ jobs:
           working-directory: ./upstream
           read-only: true
           maven-local-repo: ~/.m2/repository
-          entries: |
-            ${{ steps.scope.outputs.tag_repo }}:~/.m2/repository
+          cache-profiles: benchmark
+          fail-on-cache-miss: true
           verify: check
           verbose: true
         env:
           BORINGCACHE_RESTORE_TOKEN: ${{ secrets.BORINGCACHE_RESTORE_TOKEN || secrets.BORINGCACHE_API_TOKEN }}
+
+      - name: Verify hybrid archives restored
+        if: inputs.strategy == 'boringcache'
+        run: |
+          set -euo pipefail
+          if [[ ! -d "$HOME/.m2/repository" ]] || [[ -z "$(ls -A "$HOME/.m2/repository" 2>/dev/null)" ]]; then
+            echo "Missing or empty ~/.m2/repository after BoringCache restore" >&2
+            exit 1
+          fi
+          if [[ ! -d "$HOME/.m2/build-cache" ]] || [[ -z "$(ls -A "$HOME/.m2/build-cache" 2>/dev/null)" ]]; then
+            echo "Missing or empty ~/.m2/build-cache after BoringCache restore" >&2
+            exit 1
+          fi
 
       - name: Restore seeded actions/cache
         if: inputs.strategy == 'actions-cache'
@@ -506,7 +512,7 @@ jobs:
             --warm1-seconds "${{ inputs.cache_lane == 'rolling' && '' || steps.timings.outputs.warm1_seconds }}" \
             --cache-storage-bytes "${{ inputs.strategy == 'boringcache' && steps.bc_cache_size.outputs.bytes || steps.ac_cache_size.outputs.bytes }}" \
             --cache-storage-source "${{ inputs.strategy == 'boringcache' && 'boringcache-check' || 'github-actions-cache-api' }}" \
-            --hit-behavior-note "${{ inputs.cache_lane == 'rolling' && 'Rolling lane: this run executes only the upstream-sync seed build; warm1 follow-up runs are intentionally skipped.' || (inputs.strategy == 'boringcache' && 'Fresh lane: cold+seed run uses boringcache/one in mode=maven with setup=mise for tools and a run-scoped Maven cache tag, while archiving only ~/.m2/repository. Warm1 restores that dependency repository on a fresh runner and rebuilds the same pinned source tree against the seeded remote cache in read-only mode.' || 'Fresh lane: cold+seed run builds from scratch and saves ~/.m2/repository plus ~/.m2/build-cache to actions/cache under a run-scoped key. Warm1 restores that dependency repository and local Maven build cache on a fresh runner and rebuilds the same pinned source tree without synthetic mutations.') }}"
+            --hit-behavior-note "${{ inputs.cache_lane == 'rolling' && 'Rolling lane: this run executes only the upstream-sync seed build; warm1 follow-up runs are intentionally skipped.' || (inputs.strategy == 'boringcache' && 'Fresh lane: cold+seed run uses boringcache/one in mode=maven with a run-scoped Maven HTTP-cache tag, and archives ~/.m2/repository plus ~/.m2/build-cache via the benchmark profile in .boringcache.toml. Warm1 restores both archives on a fresh runner and rebuilds the same pinned source tree against the seeded remote cache in read-only mode.' || 'Fresh lane: cold+seed run builds from scratch and saves ~/.m2/repository plus ~/.m2/build-cache to actions/cache under a run-scoped key. Warm1 restores that dependency repository and local Maven build cache on a fresh runner and rebuilds the same pinned source tree without synthetic mutations.') }}"
 
       - name: Upload benchmark artifacts
         uses: actions/upload-artifact@v6
