@@ -1,17 +1,12 @@
 workspace = "boringcache/benchmarks"
 
-# Archive entries that complement the maven HTTP-cache proxy mode for
-# fair warm/rolling parity with actions/cache. The action's `cache-tag`
-# input prefixes each entry's tag at resolution, so the proxy tag (e.g.
-# spring-ai-maven-run-r123-a1-maven-remote) namespaces the archives.
+# Maven HTTP-cache benchmark. boringcache/one mode=maven owns the
+# build-output cache, so the benchmark profile archives only the local
+# dependency repository that the remote adapter does not cover.
 
 [entries.deps]
 tag = "maven-deps"
 default_path = "~/.m2/repository"
 
-[entries.build-cache]
-tag = "maven-build-cache"
-default_path = "~/.m2/build-cache"
-
 [profiles.benchmark]
-entries = ["deps", "build-cache"]
+entries = ["deps"]

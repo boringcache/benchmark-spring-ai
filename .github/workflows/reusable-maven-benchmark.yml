@@ -380,16 +380,12 @@ jobs:
         env:
           BORINGCACHE_RESTORE_TOKEN: ${{ secrets.BORINGCACHE_RESTORE_TOKEN || secrets.BORINGCACHE_API_TOKEN }}
 
-      - name: Verify hybrid archives restored
+      - name: Verify dependency archive restored
         if: inputs.strategy == 'boringcache'
         run: |
           set -euo pipefail
           if [[ ! -d "$HOME/.m2/repository" ]] || [[ -z "$(ls -A "$HOME/.m2/repository" 2>/dev/null)" ]]; then
             echo "Missing or empty ~/.m2/repository after BoringCache restore" >&2
-            exit 1
-          fi
-          if [[ ! -d "$HOME/.m2/build-cache" ]] || [[ -z "$(ls -A "$HOME/.m2/build-cache" 2>/dev/null)" ]]; then
-            echo "Missing or empty ~/.m2/build-cache after BoringCache restore" >&2
             exit 1
           fi
 
@@ -535,7 +531,7 @@ jobs:
             --warm1-build-seconds "${{ inputs.cache_lane == 'rolling' && '' || steps.timings.outputs.warm1_build_seconds }}" \
             --cache-storage-bytes "${{ inputs.strategy == 'boringcache' && steps.bc_cache_size.outputs.bytes || steps.ac_cache_size.outputs.bytes }}" \
             --cache-storage-source "${{ inputs.strategy == 'boringcache' && 'boringcache-check' || 'github-actions-cache-api' }}" \
-            --hit-behavior-note "${{ inputs.cache_lane == 'rolling' && 'Rolling lane: this run executes only the upstream-sync seed build; warm1 follow-up runs are intentionally skipped.' || (inputs.strategy == 'boringcache' && 'Fresh lane: cold+seed run uses boringcache/one in mode=maven with a run-scoped Maven HTTP-cache tag, and archives ~/.m2/repository plus ~/.m2/build-cache via the benchmark profile in .boringcache.toml. Warm1 restores both archives on a fresh runner and rebuilds the same pinned source tree against the seeded remote cache in read-only mode.' || 'Fresh lane: cold+seed run builds from scratch and saves ~/.m2/repository plus ~/.m2/build-cache to actions/cache under a run-scoped key. Warm1 restores that dependency repository and local Maven build cache on a fresh runner and rebuilds the same pinned source tree without synthetic mutations.') }}"
+            --hit-behavior-note "${{ inputs.cache_lane == 'rolling' && 'Rolling lane: this run executes only the upstream-sync seed build; warm1 follow-up runs are intentionally skipped.' || (inputs.strategy == 'boringcache' && 'Fresh lane: cold+seed run uses boringcache/one in mode=maven with a run-scoped Maven HTTP build-cache tag, and archives only ~/.m2/repository via the benchmark profile in .boringcache.toml. Warm1 restores the dependency repository on a fresh runner and rebuilds the same pinned source tree against the seeded remote cache in read-only mode.' || 'Fresh lane: cold+seed run builds from scratch and saves ~/.m2/repository plus ~/.m2/build-cache to actions/cache under a run-scoped key. Warm1 restores that dependency repository and local Maven build cache on a fresh runner and rebuilds the same pinned source tree without synthetic mutations.') }}"
 
       - name: Upload benchmark artifacts
         uses: actions/upload-artifact@v6
