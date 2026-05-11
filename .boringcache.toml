@@ -1,4 +1,4 @@
-workspace = "boringcache/benchmarks"
+workspace = "boringcache/benchmark-spring-ai"
 
 # Maven HTTP-cache benchmark. boringcache/one mode=maven owns the
 # build-output cache, so the benchmark profile archives only the local

@@ -31,7 +31,7 @@ on:
       benchmark_workspace:
         required: false
         type: string
-        default: boringcache/benchmarks
+        default: ""
       java_version:
         required: false
         type: string
@@ -44,7 +44,7 @@ on:
 env:
   PROJECT_REPO: ${{ inputs.project_repo }}
   BENCHMARK_ID: ${{ inputs.benchmark_id }}
-  BENCHMARK_WORKSPACE: ${{ inputs.benchmark_workspace }}
+  BENCHMARK_WORKSPACE: ${{ inputs.benchmark_workspace || github.repository }}
   CACHE_LANE: ${{ inputs.cache_lane }}
   BORINGCACHE_BLOB_DOWNLOAD_CONCURRENCY: ${{ inputs.blob_download_concurrency }}
   BORINGCACHE_BLOB_PREFETCH_CONCURRENCY: ${{ inputs.blob_prefetch_concurrency }}
