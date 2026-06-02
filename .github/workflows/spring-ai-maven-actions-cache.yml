@@ -13,19 +13,6 @@ on:
         options:
           - fresh
           - rolling
-  schedule:
-    - cron: "0 4 * * 4"
-  pull_request:
-    paths:
-      - ".gitmodules"
-      - ".github/workflows/spring-ai-maven-boringcache.yml"
-      - ".github/workflows/spring-ai-maven-actions-cache.yml"
-      - ".github/workflows/reusable-maven-benchmark.yml"
-      - "README.md"
-      - "scenarios/**"
-      - "scripts/**"
-      - "upstream"
-
 permissions:
   contents: read
   actions: write
