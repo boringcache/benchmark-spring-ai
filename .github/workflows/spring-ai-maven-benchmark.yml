@@ -43,7 +43,7 @@ permissions:
 
 jobs:
   github-actions-cache:
-    name: Build with GitHub Actions Cache
+    name: GHA
     uses: ./.github/workflows/reusable-maven-benchmark.yml
     with:
       benchmark_id: spring-ai-maven
@@ -55,7 +55,7 @@ jobs:
     secrets: inherit
 
   boringcache:
-    name: Build with BoringCache
+    name: BC
     uses: ./.github/workflows/reusable-maven-benchmark.yml
     with:
       benchmark_id: spring-ai-maven
