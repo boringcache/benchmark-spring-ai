@@ -16,6 +16,11 @@ on:
         required: false
         type: string
         default: fresh
+      cli_version:
+        description: "Optional BoringCache CLI release tag for canary runs."
+        required: false
+        type: string
+        default: ""
       benchmark_workspace:
         required: false
         type: string
@@ -134,6 +139,7 @@ jobs:
         uses: boringcache/one@v1
         with:
           setup: none
+          cli-version: ${{ inputs.cli_version }}
           mode: maven
           workspace: ${{ env.BENCHMARK_WORKSPACE }}
           cache-tag: ${{ steps.scope.outputs.tag_remote }}
@@ -393,6 +399,7 @@ jobs:
         uses: boringcache/one@v1
         with:
           setup: none
+          cli-version: ${{ inputs.cli_version }}
           mode: maven
           workspace: ${{ env.BENCHMARK_WORKSPACE }}
           cache-tag: ${{ steps.scope.outputs.tag_remote }}
@@ -472,6 +479,7 @@ jobs:
         uses: boringcache/one@v1
         with:
           setup: none
+          cli-version: ${{ inputs.cli_version }}
           mode: archive
           workspace: ${{ env.BENCHMARK_WORKSPACE }}
           cli-platform: linux-amd64
