@@ -61,7 +61,7 @@ jobs:
       project_repo: spring-projects/spring-ai
       strategy: boringcache
       cache_lane: ${{ github.event_name == 'push' && 'rolling' || github.event_name == 'workflow_dispatch' && inputs.cache_lane || 'fresh' }}
-      cli_version: ${{ inputs.cli_version || vars.BORINGCACHE_BENCHMARK_CLI_VERSION || 'v1.13.93' }}
+      cli_version: ${{ inputs.cli_version }}
       java_version: "21"
       build_command: ./mvnw --batch-mode -ntp clean install -DskipTests -Dmaven.javadoc.skip=true
     secrets: inherit
