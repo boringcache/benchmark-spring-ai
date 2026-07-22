@@ -146,7 +146,6 @@ jobs:
           working-directory: ./upstream
           maven-local-repo: ~/.m2/repository
           cache-profiles: benchmark
-          verify: none
           verbose: true
         env:
           BORINGCACHE_RESTORE_TOKEN: ${{ secrets.BORINGCACHE_RESTORE_TOKEN || secrets.BORINGCACHE_API_TOKEN }}
@@ -408,7 +407,6 @@ jobs:
           maven-local-repo: ~/.m2/repository
           cache-profiles: benchmark
           fail-on-cache-miss: true
-          verify: none
           verbose: true
         env:
           BORINGCACHE_RESTORE_TOKEN: ${{ secrets.BORINGCACHE_RESTORE_TOKEN || secrets.BORINGCACHE_API_TOKEN }}
