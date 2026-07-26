@@ -146,6 +146,7 @@ jobs:
           working-directory: ./upstream
           maven-local-repo: ~/.m2/repository
           cache-profiles: benchmark
+          fail-on-cache-error: ${{ inputs.cache_lane == 'fresh' }}
           verbose: true
         env:
           BORINGCACHE_RESTORE_TOKEN: ${{ secrets.BORINGCACHE_RESTORE_TOKEN || secrets.BORINGCACHE_API_TOKEN }}
