@@ -406,6 +406,7 @@ jobs:
           cache-tag: ${{ steps.scope.outputs.tag_remote }}
           working-directory: ./upstream
           read-only: true
+          save-on-pull-request: ${{ inputs.cache_lane == 'fresh' }}
           maven-local-repo: ~/.m2/repository
           cache-profiles: benchmark
           fail-on-cache-miss: true
