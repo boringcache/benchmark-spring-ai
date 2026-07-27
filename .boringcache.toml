@@ -1,5 +1,8 @@
 workspace = "boringcache/benchmark-spring-ai"
 
+[adapters.maven]
+tag = "spring-ai-maven"
+
 # Maven HTTP-cache benchmark. boringcache/one mode=maven owns the
 # build-output cache, so the benchmark profile archives only the local
 # dependency repository that the remote adapter does not cover.
