@@ -113,6 +113,8 @@ jobs:
           fi
           tag_remote="${cache_scope}-maven-remote"
 
+          ./scripts/scope-boringcache-run.sh "$cache_scope"
+
           echo "scope_started_at=${scope_started_at}" >> "$GITHUB_OUTPUT"
           echo "tag_remote=${tag_remote}" >> "$GITHUB_OUTPUT"
           echo "cache_key_prefix=${cache_key_prefix}" >> "$GITHUB_OUTPUT"
@@ -124,8 +126,9 @@ jobs:
           set -euo pipefail
 
           mode="${1:-warm}"
+          log_path="${RUNNER_TEMP}/${BENCHMARK_ID}-${mode}.log"
           cd upstream
-          eval "$BUILD_COMMAND"
+          eval "$BUILD_COMMAND" 2>&1 | tee "$log_path"
           SH
           chmod +x ./run-maven-phase.sh
 
@@ -136,20 +139,21 @@ jobs:
       - name: Configure boringcache/one
         if: inputs.strategy == 'boringcache'
         id: boringcache_one
-        uses: boringcache/one@9721d419d2c78c0780963d297eb3f81f24641a27
+        uses: boringcache/one@6b7033721b37075b2138fd0c769bf088e0836ce6 # v1.14.0
         with:
           setup: none
           cli-version: ${{ inputs.cli_version }}
           mode: maven
+          trust-policy: publish
           working-directory: ./upstream
           maven-local-repo: ~/.m2/repository
           cache-profiles: benchmark
-          save-on-pull-request: ${{ inputs.cache_lane == 'fresh' }}
           fail-on-cache-error: ${{ inputs.cache_lane == 'fresh' }}
           verbose: true
         env:
           BORINGCACHE_RESTORE_TOKEN: ${{ secrets.BORINGCACHE_RESTORE_TOKEN }}
           BORINGCACHE_SAVE_TOKEN: ${{ secrets.BORINGCACHE_SAVE_TOKEN }}
+          BORINGCACHE_NO_GIT: "true"
           BORINGCACHE_OBSERVABILITY_JSONL_PATH: ${{ runner.temp }}/${{ env.BENCHMARK_ID }}-boringcache-build-observability.jsonl
 
       - name: Purge GitHub Actions cache keys
@@ -241,10 +245,23 @@ jobs:
           phase_start="${{ steps.seed_timing_start.outputs.started_at }}"
           start="$(date +%s)"
           ./run-maven-phase.sh cold
+          if [[ "$CACHE_LANE" != "rolling" && "${{ inputs.strategy }}" == "boringcache" ]] && \
+             grep -Fq "Found cached build, restoring" "${RUNNER_TEMP}/${BENCHMARK_ID}-cold.log"; then
+            echo "Fresh BoringCache cold build unexpectedly restored Maven build-cache history" >&2
+            exit 1
+          fi
           rm -rf "$HOME/.m2/repository/org/springframework/ai"
           end="$(date +%s)"
           echo "seconds=$((end - phase_start))" >> "$GITHUB_OUTPUT"
           echo "build_seconds=$((end - start))" >> "$GITHUB_OUTPUT"
+
+      - name: Upload cold Maven native evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: maven-native-${{ env.BENCHMARK_ID }}-${{ inputs.strategy }}-${{ inputs.cache_lane }}-cold
+          path: ${{ runner.temp }}/${{ env.BENCHMARK_ID }}-cold.log
+          if-no-files-found: error
 
       - name: Capture BoringCache session summary
         if: inputs.strategy == 'boringcache' && always()
@@ -377,6 +394,8 @@ jobs:
           fi
           tag_remote="${cache_scope}-maven-remote"
 
+          ./scripts/scope-boringcache-run.sh "$cache_scope"
+
           echo "tag_remote=${tag_remote}" >> "$GITHUB_OUTPUT"
 
           cat > ./run-maven-phase.sh <<'SH'
@@ -384,8 +403,9 @@ jobs:
           set -euo pipefail
 
           mode="${1:-warm}"
+          log_path="${RUNNER_TEMP}/${BENCHMARK_ID}-${mode}.log"
           cd upstream
-          eval "$BUILD_COMMAND"
+          eval "$BUILD_COMMAND" 2>&1 | tee "$log_path"
           SH
           chmod +x ./run-maven-phase.sh
 
@@ -395,20 +415,20 @@ jobs:
 
       - name: Configure boringcache/one
         if: inputs.strategy == 'boringcache'
-        uses: boringcache/one@9721d419d2c78c0780963d297eb3f81f24641a27
+        uses: boringcache/one@6b7033721b37075b2138fd0c769bf088e0836ce6 # v1.14.0
         with:
           setup: none
           cli-version: ${{ inputs.cli_version }}
           mode: maven
+          trust-policy: restore
           working-directory: ./upstream
-          read-only: true
-          save-on-pull-request: ${{ inputs.cache_lane == 'fresh' }}
           maven-local-repo: ~/.m2/repository
           cache-profiles: benchmark
           fail-on-cache-miss: true
           verbose: true
         env:
           BORINGCACHE_RESTORE_TOKEN: ${{ secrets.BORINGCACHE_RESTORE_TOKEN }}
+          BORINGCACHE_NO_GIT: "true"
 
       - name: Verify dependency archive restored
         if: inputs.strategy == 'boringcache'
@@ -437,9 +457,23 @@ jobs:
           phase_start="${{ steps.scenario_timing_start.outputs.started_at }}"
           start="$(date +%s)"
           ./run-maven-phase.sh warm
+          native_cache_hits="$(grep -Fc "Found cached build, restoring" "${RUNNER_TEMP}/${BENCHMARK_ID}-warm.log" || true)"
+          if [[ "$native_cache_hits" -lt 1 ]]; then
+            echo "Warm Maven build produced zero native build-cache hits" >&2
+            exit 1
+          fi
+          echo "native_cache_hits=${native_cache_hits}" >> "$GITHUB_OUTPUT"
           end="$(date +%s)"
           echo "seconds=$((end - phase_start))" >> "$GITHUB_OUTPUT"
           echo "build_seconds=$((end - start))" >> "$GITHUB_OUTPUT"
+
+      - name: Upload warm Maven native evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: maven-native-${{ env.BENCHMARK_ID }}-${{ inputs.strategy }}-warm
+          path: ${{ runner.temp }}/${{ env.BENCHMARK_ID }}-warm.log
+          if-no-files-found: error
 
       - name: Persist scenario timing artifact
         run: |
@@ -449,6 +483,7 @@ jobs:
           phase=warm1
           seconds=${{ steps.phase_build.outputs.seconds }}
           build_seconds=${{ steps.phase_build.outputs.build_seconds }}
+          native_cache_hits=${{ steps.phase_build.outputs.native_cache_hits }}
           EOF
 
       - name: Upload scenario timing artifact
