@@ -146,6 +146,7 @@ jobs:
           working-directory: ./upstream
           maven-local-repo: ~/.m2/repository
           cache-profiles: benchmark
+          save-on-pull-request: ${{ inputs.cache_lane == 'fresh' }}
           fail-on-cache-error: ${{ inputs.cache_lane == 'fresh' }}
           verbose: true
         env:
