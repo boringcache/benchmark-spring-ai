@@ -41,7 +41,7 @@ env:
   CACHE_LANE: ${{ inputs.cache_lane }}
   JAVA_VERSION: ${{ inputs.java_version }}
   BUILD_COMMAND: ${{ inputs.build_command }}
-  PROXY_PORT: "5000"
+  PROXY_PORT: "22243"
 
 jobs:
   seed-cache:
