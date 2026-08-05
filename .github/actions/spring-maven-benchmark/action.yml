@@ -1,0 +1,135 @@
+name: "Run Spring AI Maven benchmark phase"
+description: "Runs one Spring AI Maven cache provider and phase."
+
+inputs:
+  strategy:
+    required: true
+  cache_lane:
+    required: true
+  phase:
+    required: true
+  cli_version:
+    required: false
+    default: ""
+  java_version:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout pinned Spring AI source
+      shell: bash
+      run: |
+        git submodule sync --recursive
+        git -c protocol.version=2 submodule update --init --depth 1 --recommend-shallow --jobs 4 upstream
+
+    - name: Prepare clean Spring AI source
+      shell: bash
+      env:
+        PREPARE_PHASE: ${{ inputs.phase == 'warm' && 'warm1' || 'base' }}
+      run: ./scripts/prepare-source.sh "$PREPARE_PHASE"
+
+    - name: Select the cache cohort
+      id: scope
+      shell: bash
+      env:
+        CACHE_LANE: ${{ inputs.cache_lane }}
+      run: |
+        set -euo pipefail
+        ref_slug="$(printf '%s' "$GITHUB_REF_NAME" | tr -c 'A-Za-z0-9._-' '-')"
+        ref_slug="${ref_slug#-}"
+        ref_slug="${ref_slug%-}"
+        ref_slug="${ref_slug:-main}"
+        if [[ "$CACHE_LANE" == "rolling" ]]; then
+          cache_scope="spring-ai-maven-rolling-${ref_slug}"
+        else
+          cache_scope="spring-ai-maven-run-r${GITHUB_RUN_ID}-a${GITHUB_RUN_ATTEMPT}"
+        fi
+        ./scripts/scope-boringcache-run.sh "$cache_scope"
+        source_sha="$(git rev-parse HEAD:upstream)"
+        echo "cache_scope=${cache_scope}" >> "$GITHUB_OUTPUT"
+        echo "cache_key=maven-${cache_scope}-${source_sha}" >> "$GITHUB_OUTPUT"
+
+    - name: Set up Java
+      uses: actions/setup-java@v5
+      with:
+        distribution: liberica
+        java-version: ${{ inputs.java_version }}
+
+    - name: Restore the GitHub Actions cache
+      if: inputs.strategy == 'actions-cache' && inputs.phase == 'publish'
+      uses: actions/cache@v5
+      with:
+        path: ${{ github.workspace }}/.maven-build-cache
+        key: ${{ steps.scope.outputs.cache_key }}
+        restore-keys: |
+          maven-${{ steps.scope.outputs.cache_scope }}-
+
+    - name: Restore the exact GitHub Actions cache
+      if: inputs.strategy == 'actions-cache' && inputs.phase == 'warm'
+      uses: actions/cache/restore@v5
+      with:
+        path: ${{ github.workspace }}/.maven-build-cache
+        key: ${{ steps.scope.outputs.cache_key }}
+        fail-on-cache-miss: true
+
+    - name: Configure the local Maven build cache
+      if: inputs.strategy == 'actions-cache'
+      shell: bash
+      run: echo "MAVEN_OPTS=-Dmaven.build.cache.enabled=true -Dmaven.build.cache.remote.enabled=false -Dmaven.build.cache.location=${{ github.workspace }}/.maven-build-cache" >> "$GITHUB_ENV"
+
+    - name: Publish with BoringCache
+      id: boringcache-publish
+      if: inputs.strategy == 'boringcache' && inputs.phase == 'publish'
+      uses: boringcache/one@09e053620cda4d3472f26a3ddd181144a108e2c2 # v1.16.8
+      with:
+        cli-version: ${{ inputs.cli_version }}
+        setup: none
+        mode: maven
+        trust-policy: publish
+        working-directory: upstream
+        fail-on-cache-error: true
+        metadata-hints: phase=${{ inputs.cache_lane == 'rolling' && 'rolling' || 'fresh-cold' }}
+
+    - name: Restore with BoringCache
+      id: boringcache-restore
+      if: inputs.strategy == 'boringcache' && inputs.phase == 'warm'
+      uses: boringcache/one@09e053620cda4d3472f26a3ddd181144a108e2c2 # v1.16.8
+      with:
+        cli-version: ${{ inputs.cli_version }}
+        setup: none
+        mode: maven
+        trust-policy: restore
+        working-directory: upstream
+        fail-on-cache-miss: true
+        fail-on-cache-error: true
+        metadata-hints: phase=fresh-warm
+
+    - name: Build Spring AI
+      shell: bash
+      working-directory: upstream
+      run: ./mvnw --batch-mode -ntp clean install -DskipTests -Dmaven.javadoc.skip=true
+
+    - name: Verify the Spring AI build
+      shell: bash
+      run: |
+        set -euo pipefail
+        artifact="$(find upstream/spring-ai-commons/target -maxdepth 1 -type f -name 'spring-ai-commons-*.jar' -print -quit)"
+        test -n "$artifact"
+        test -s "$artifact"
+
+    - name: Retain publish evidence
+      if: inputs.strategy == 'boringcache' && inputs.phase == 'publish'
+      uses: actions/upload-artifact@v6
+      with:
+        name: spring-ai-maven-${{ inputs.cache_lane }}-publish
+        path: ${{ steps.boringcache-publish.outputs.evidence-path }}
+        if-no-files-found: error
+
+    - name: Retain warm evidence
+      if: inputs.strategy == 'boringcache' && inputs.phase == 'warm'
+      uses: actions/upload-artifact@v6
+      with:
+        name: spring-ai-maven-fresh-restore
+        path: ${{ steps.boringcache-restore.outputs.evidence-path }}
+        if-no-files-found: error
