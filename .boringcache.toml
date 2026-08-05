@@ -2,6 +2,7 @@ workspace = "boringcache/benchmark-spring-ai"
 
 [adapters.maven]
 tag = "spring-ai-maven-local"
+command = ["./mvnw", "--batch-mode", "-ntp", "clean", "install", "-DskipTests", "-Dmaven.javadoc.skip=true"]
 
 # Maven HTTP-cache benchmark. boringcache/one mode=maven owns the
 # build-output cache, so the benchmark profile archives only the local

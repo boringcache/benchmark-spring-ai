@@ -30,11 +30,9 @@ jobs:
     uses: ./.github/workflows/reusable-maven-benchmark.yml
     with:
       benchmark_id: spring-ai-maven
-      project_repo: spring-projects/spring-ai
       strategy: actions-cache
       cache_lane: ${{ github.event_name == 'pull_request' && 'fresh' || 'rolling' }}
-      java_version: "21"
-      build_command: ./mvnw --batch-mode -ntp clean install -DskipTests -Dmaven.javadoc.skip=true
+      java_version: "17"
     secrets: inherit
 
   boringcache:
@@ -42,9 +40,7 @@ jobs:
     uses: ./.github/workflows/reusable-maven-benchmark.yml
     with:
       benchmark_id: spring-ai-maven
-      project_repo: spring-projects/spring-ai
       strategy: boringcache
       cache_lane: ${{ github.event_name == 'pull_request' && 'fresh' || 'rolling' }}
-      java_version: "21"
-      build_command: ./mvnw --batch-mode -ntp clean install -DskipTests -Dmaven.javadoc.skip=true
+      java_version: "17"
     secrets: inherit
