@@ -3,14 +3,3 @@ workspace = "boringcache/benchmark-spring-ai"
 [adapters.maven]
 tag = "spring-ai-maven-local"
 command = ["./mvnw", "--batch-mode", "-ntp", "clean", "install", "-DskipTests", "-Dmaven.javadoc.skip=true"]
-
-# Maven HTTP-cache benchmark. boringcache/one mode=maven owns the
-# build-output cache, so the benchmark profile archives only the local
-# dependency repository that the remote adapter does not cover.
-
-[entries.deps]
-tag = "spring-ai-maven-deps-local"
-default_path = "~/.m2/repository"
-
-[profiles.benchmark]
-entries = ["deps"]

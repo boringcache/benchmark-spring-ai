@@ -26,7 +26,7 @@ on:
 env:
   BENCHMARK_ID: ${{ inputs.benchmark_id }}
   CACHE_LANE: ${{ inputs.cache_lane }}
-  MAVEN_LOCAL_REPO: ~/.m2/repository
+  MAVEN_BUILD_CACHE: ${{ github.workspace }}/.maven-build-cache
 
 jobs:
   publish:
@@ -91,10 +91,14 @@ jobs:
         if: inputs.strategy == 'actions-cache'
         uses: actions/cache@v5
         with:
-          path: ${{ env.MAVEN_LOCAL_REPO }}
+          path: ${{ env.MAVEN_BUILD_CACHE }}
           key: ${{ steps.scope.outputs.cache_key }}
           restore-keys: |
             maven-${{ steps.scope.outputs.cache_scope }}-
+
+      - name: Configure the local Maven build cache
+        if: inputs.strategy == 'actions-cache'
+        run: echo "MAVEN_OPTS=-Dmaven.build.cache.enabled=true -Dmaven.build.cache.remote.enabled=false -Dmaven.build.cache.location=${MAVEN_BUILD_CACHE}" >> "$GITHUB_ENV"
 
       - name: Configure BoringCache One for the Spring AI build
         if: inputs.strategy == 'boringcache'
@@ -106,8 +110,6 @@ jobs:
           mode: maven
           trust-policy: publish
           working-directory: upstream
-          maven-local-repo: ${{ env.MAVEN_LOCAL_REPO }}
-          cache-profiles: benchmark
           fail-on-cache-error: true
           metadata-hints: phase=${{ inputs.cache_lane == 'rolling' && 'rolling' || 'fresh-cold' }}
         env:
@@ -168,9 +170,13 @@ jobs:
         if: inputs.strategy == 'actions-cache'
         uses: actions/cache/restore@v5
         with:
-          path: ${{ env.MAVEN_LOCAL_REPO }}
+          path: ${{ env.MAVEN_BUILD_CACHE }}
           key: ${{ needs.publish.outputs.cache_key }}
           fail-on-cache-miss: true
+
+      - name: Configure the local Maven build cache
+        if: inputs.strategy == 'actions-cache'
+        run: echo "MAVEN_OPTS=-Dmaven.build.cache.enabled=true -Dmaven.build.cache.remote.enabled=false -Dmaven.build.cache.location=${MAVEN_BUILD_CACHE}" >> "$GITHUB_ENV"
 
       - name: Configure BoringCache One from the published cohort
         if: inputs.strategy == 'boringcache'
@@ -182,8 +188,6 @@ jobs:
           mode: maven
           trust-policy: restore
           working-directory: upstream
-          maven-local-repo: ${{ env.MAVEN_LOCAL_REPO }}
-          cache-profiles: benchmark
           fail-on-cache-miss: true
           fail-on-cache-error: true
           metadata-hints: phase=fresh-warm
