@@ -1,6 +1,0 @@
-workspace = "boringcache/benchmark-spring-ai"
-
-[adapters.maven]
-tag = "spring-ai-maven-local"
-metadata-hints = ["benchmark=spring-ai", "upstream-job=integration-tests-build"]
-command = ["./mvnw", "--batch-mode", "-ntp", "--update-snapshots", "clean", "install", "-DskipTests"]
